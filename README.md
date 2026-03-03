@@ -113,6 +113,34 @@ To stop:
 docker compose down
 ```
 
+### Proton Bridge TLS note (self-signed certificate)
+
+Proton Bridge commonly presents a self-signed TLS certificate on localhost. If you see `DEPTH_ZERO_SELF_SIGNED_CERT`, set `tls.rejectUnauthorized` to `false` for both IMAP and SMTP account settings.
+
+Example account payload:
+
+```json
+{
+  "account": "proton",
+  "imap": {
+    "host": "host.docker.internal",
+    "port": 1143,
+    "secure": true,
+    "auth": { "user": "bridge-user", "pass": "bridge-pass" },
+    "tls": { "rejectUnauthorized": false }
+  },
+  "smtp": {
+    "host": "host.docker.internal",
+    "port": 1025,
+    "secure": true,
+    "auth": { "user": "bridge-user", "pass": "bridge-pass" },
+    "tls": { "rejectUnauthorized": false }
+  }
+}
+```
+
+If you run with `docker-compose.hostnet.yml`, use `127.0.0.1` instead of `host.docker.internal`.
+
 ## Screenshots
 
 **1. General overview**
