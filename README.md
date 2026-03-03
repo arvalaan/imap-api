@@ -306,17 +306,6 @@ You can also move through the generic message update endpoint (`PUT /v1/account/
 
 The response includes destination mailbox information and (when available) a new `messageId` for the moved message in that mailbox.
 
-When using move operations, IMAP API applies a longer internal command timeout to better handle bursts of queued move requests for the same account.
-
-For higher-throughput migrations, use bulk move to send many message IDs in one request:
-
-```
-$ curl -XPOST "localhost:3000/v1/account/example/messages/move" -H "content-type: application/json" -d '{
-    "path": "Labels/Unknown",
-    "messages": ["AAAAAQAAAeE", "AAAAAQAAAeF", "AAAAAQAAAeG"]
-}'
-```
-
 #### Send an email
 
 The following is an example of how to send a reply. In this case you should specify a reference message you are replying to (NB! this message must exist). Use the "id" from message listing as the "reference.message" value.

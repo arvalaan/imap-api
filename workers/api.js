@@ -956,7 +956,7 @@ const init = async () => {
             let accountObject = new Account({ redis, account: request.params.account, call });
 
             try {
-                return await accountObject.updateMessage(request.params.message, { path: request.payload.path }, { timeout: 5 * 60 * 1000 });
+                return await accountObject.updateMessage(request.params.message, { path: request.payload.path });
             } catch (err) {
                 if (Boom.isBoom(err)) {
                     throw err;
@@ -997,66 +997,6 @@ const init = async () => {
                         .description('Destination mailbox path')
                         .example('Labels/Unknown')
                 }).label('MessageMove')
-            }
-        }
-    });
-
-
-    server.route({
-        method: 'POST',
-        path: '/v1/account/{account}/messages/move',
-
-        async handler(request) {
-            let accountObject = new Account({ redis, account: request.params.account, call });
-
-            try {
-                return await accountObject.bulkMoveMessages(request.payload.messages, request.payload.path, { timeout: 10 * 60 * 1000 });
-            } catch (err) {
-                if (Boom.isBoom(err)) {
-                    throw err;
-                }
-                throw Boom.boomify(err, { statusCode: err.statusCode || 500, decorate: { code: err.code } });
-            }
-        },
-        options: {
-            description: 'Bulk move messages',
-            notes: 'Move multiple messages to destination mailbox path in a single request',
-            tags: ['api', 'message'],
-
-            validate: {
-                options: {
-                    stripUnknown: false,
-                    abortEarly: false,
-                    convert: true
-                },
-                failAction,
-
-                params: Joi.object({
-                    account: Joi.string()
-                        .max(256)
-                        .required()
-                        .example('example')
-                        .description('Account ID')
-                }),
-
-                payload: Joi.object({
-                    path: Joi.string()
-                        .max(1024)
-                        .required()
-                        .description('Destination mailbox path')
-                        .example('Labels/Unknown'),
-                    messages: Joi.array()
-                        .items(
-                            Joi.string()
-                                .max(256)
-                                .example('AAAAAQAACnA')
-                                .description('Message ID')
-                        )
-                        .min(1)
-                        .max(1000)
-                        .required()
-                        .description('Message IDs to move')
-                }).label('BulkMessageMove')
             }
         }
     });
