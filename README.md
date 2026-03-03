@@ -113,6 +113,25 @@ To stop:
 docker compose down
 ```
 
+### Portainer stack (clone repo at startup)
+
+If you prefer deploying as a Portainer stack that clones your fork on container startup, use `docker-compose.portainer.yml`.
+
+Minimal flow:
+
+```bash
+docker compose -f docker-compose.portainer.yml up -d
+```
+
+Useful environment variables:
+
+- `IMAPAPI_REPO` (default: `https://github.com/ewildgoose/imap-api.git`)
+- `IMAPAPI_BRANCH` (default: `main`)
+- `IMAPAPI_PUBLISHED_PORT` (default: `3000`)
+- `HOST_IMAPAPI_CONFIG` (default: `/opt/imapapi/imapapi.toml`)
+
+This stack uses Node 20 and starts IMAP API with explicit Redis/API flags (`--dbs.redis`, `--api.host`, `--api.port`) for predictable runtime behavior.
+
 ### Proton Bridge TLS note (self-signed certificate)
 
 Proton Bridge commonly presents a self-signed TLS certificate on localhost. If you see `DEPTH_ZERO_SELF_SIGNED_CERT`, set `tls.rejectUnauthorized` to `false` for both IMAP and SMTP account settings.
