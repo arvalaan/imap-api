@@ -301,7 +301,8 @@ async function onCommand(worker, message) {
         case 'createMailbox':
         case 'deleteMailbox':
         case 'submitMessage':
-        case 'getAttachment': {
+        case 'getAttachment':
+        case 'bulkMoveMessages': {
             if (!assigned.has(message.account)) {
                 return {
                     error: 'No active connection to requested account. Try again later.',

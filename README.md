@@ -39,7 +39,7 @@ Even though still available from Github, it has clearly been abandoned, so not g
 ### Requirements
 
 -   **Redis** – any version
--   **Node.js** - v12.16.0 or newer
+-   **Node.js** - v20 LTS or newer
 
 ### Installation
 
@@ -60,10 +60,105 @@ $ node server.js
 Or use custom Redis connection URL
 
 ```
-$ node server.js --dbs.redis="redis://127.0.0.1:6379"
+$ node server.js --dbs.redis="redis://127.0.0.1:6379/8"
 ```
 
 Once application is started open http://127.0.0.1:3000/ for instructions and API documentation.
+
+### Verify dependency upgrades on Node LTS
+
+Dependency upgrades should be treated as **verified only after runtime checks pass**. Use the included verifier script to test install, lint, startup, and API health check against a local Redis instance:
+
+```bash
+npm run verify:lts
+```
+
+To validate another Node major (for example current and next LTS), run:
+
+```bash
+./scripts/verify-node-lts.sh 20
+./scripts/verify-node-lts.sh 22
+```
+
+In CI, `.github/workflows/node-lts.yml` runs the same checks automatically for every push and pull request.
+
+### Run with Docker Compose
+
+This is the quickest way to run IMAP API together with Redis.
+
+```bash
+git clone <your-repo-url> imap-api
+cd imap-api
+git checkout work
+
+docker compose up --build
+```
+
+Docker Compose waits for Redis health before starting IMAP API. Default setup uses bridge networking and publishes API on `127.0.0.1:3000`. For host services like Proton Bridge, use `host.docker.internal` as IMAP/SMTP host in account settings.
+
+If you specifically need host networking on Linux, use:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.hostnet.yml up --build
+```
+
+Then open:
+
+- API/UI: `http://127.0.0.1:3000/`
+- API stats check: `http://127.0.0.1:3000/v1/stats`
+
+To stop:
+
+```bash
+docker compose down
+```
+
+### Portainer stack (clone repo at startup)
+
+If you prefer deploying as a Portainer stack that clones your fork on container startup, use `docker-compose.portainer.yml`.
+
+Minimal flow:
+
+```bash
+docker compose -f docker-compose.portainer.yml up -d
+```
+
+Useful environment variables:
+
+- `IMAPAPI_REPO` (default: `https://github.com/ewildgoose/imap-api.git`)
+- `IMAPAPI_BRANCH` (default: `main`)
+- `IMAPAPI_PUBLISHED_PORT` (default: `3000`)
+- `HOST_IMAPAPI_CONFIG` (default: `/opt/imapapi/imapapi.toml`)
+
+This stack uses Node 20 and starts IMAP API with explicit Redis/API flags (`--dbs.redis`, `--api.host`, `--api.port`) for predictable runtime behavior.
+
+### Proton Bridge TLS note (self-signed certificate)
+
+Proton Bridge commonly presents a self-signed TLS certificate on localhost. If you see `DEPTH_ZERO_SELF_SIGNED_CERT`, set `tls.rejectUnauthorized` to `false` for both IMAP and SMTP account settings.
+
+Example account payload:
+
+```json
+{
+  "account": "proton",
+  "imap": {
+    "host": "host.docker.internal",
+    "port": 1143,
+    "secure": true,
+    "auth": { "user": "bridge-user", "pass": "bridge-pass" },
+    "tls": { "rejectUnauthorized": false }
+  },
+  "smtp": {
+    "host": "host.docker.internal",
+    "port": 1025,
+    "secure": true,
+    "auth": { "user": "bridge-user", "pass": "bridge-pass" },
+    "tls": { "rejectUnauthorized": false }
+  }
+}
+```
+
+If you run with `docker-compose.hostnet.yml`, use `127.0.0.1` instead of `host.docker.internal`.
 
 ## Screenshots
 
@@ -195,6 +290,31 @@ When fetching next page, add `page` query argument to the URL. Pages are zero in
 
 ```
 $ curl -XGET "localhost:3000/v1/account/example/messages?path=INBOX&page=5"
+```
+
+#### Move a message to another mailbox
+
+Use the dedicated move endpoint with the message `id` from the message list response.
+
+```
+$ curl -XPOST "localhost:3000/v1/account/example/message/AAAAAQAAAeE/move" -H "content-type: application/json" -d '{
+    "path": "Labels/Unknown"
+}'
+```
+
+You can also move through the generic message update endpoint (`PUT /v1/account/{account}/message/{message}`) by setting `path` in the payload.
+
+The response includes destination mailbox information and (when available) a new `messageId` for the moved message in that mailbox.
+
+When using move operations, IMAP API applies a longer internal command timeout to better handle bursts of queued move requests for the same account.
+
+For higher-throughput migrations, use bulk move to send many message IDs in one request:
+
+```
+$ curl -XPOST "localhost:3000/v1/account/example/messages/move" -H "content-type: application/json" -d '{
+    "path": "Labels/Unknown",
+    "messages": ["AAAAAQAAAeE", "AAAAAQAAAeF", "AAAAAQAAAeG"]
+}'
 ```
 
 #### Send an email

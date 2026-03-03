@@ -1,0 +1,23 @@
+name: node-lts
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Setup Redis
+        uses: redis-stack/redis-stack-github-action@v1
+        with:
+          redis-version: '7.2'
+      - name: Verify on Node LTS
+        run: ./scripts/verify-node-lts.sh ${{ matrix.node }}
