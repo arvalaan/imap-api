@@ -241,13 +241,15 @@ $ curl -XGET "localhost:3000/v1/account/example/messages?path=INBOX&page=5"
 
 #### Move a message to another mailbox
 
-Use the message `id` from the message list response and update its `path`.
+Use the dedicated move endpoint with the message `id` from the message list response.
 
 ```
-$ curl -XPUT "localhost:3000/v1/account/example/message/AAAAAQAAAeE" -H "content-type: application/json" -d '{
+$ curl -XPOST "localhost:3000/v1/account/example/message/AAAAAQAAAeE/move" -H "content-type: application/json" -d '{
     "path": "Labels/Unknown"
 }'
 ```
+
+You can also move through the generic message update endpoint (`PUT /v1/account/{account}/message/{message}`) by setting `path` in the payload.
 
 The response includes destination mailbox information and (when available) a new `messageId` for the moved message in that mailbox.
 
