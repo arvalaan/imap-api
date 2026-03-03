@@ -1,0 +1,20 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: imapapi-redis
+    command: ["redis-server", "--appendonly", "no", "--save", ""]
+    ports:
+      - "6379:6379"
+
+  imapapi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: imapapi-app
+    depends_on:
+      - redis
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped

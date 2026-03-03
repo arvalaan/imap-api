@@ -39,7 +39,7 @@ Even though still available from Github, it has clearly been abandoned, so not g
 ### Requirements
 
 -   **Redis** – any version
--   **Node.js** - v12.16.0 or newer
+-   **Node.js** - v20 LTS or newer
 
 ### Installation
 
@@ -64,6 +64,46 @@ $ node server.js --dbs.redis="redis://127.0.0.1:6379"
 ```
 
 Once application is started open http://127.0.0.1:3000/ for instructions and API documentation.
+
+### Verify dependency upgrades on Node LTS
+
+Dependency upgrades should be treated as **verified only after runtime checks pass**. Use the included verifier script to test install, lint, startup, and API health check against a local Redis instance:
+
+```bash
+npm run verify:lts
+```
+
+To validate another Node major (for example current and next LTS), run:
+
+```bash
+./scripts/verify-node-lts.sh 20
+./scripts/verify-node-lts.sh 22
+```
+
+In CI, `.github/workflows/node-lts.yml` runs the same checks automatically for every push and pull request.
+
+### Run with Docker Compose
+
+This is the quickest way to run IMAP API together with Redis.
+
+```bash
+git clone <your-repo-url> imap-api
+cd imap-api
+git checkout work
+
+docker compose up --build
+```
+
+Then open:
+
+- API/UI: `http://127.0.0.1:3000/`
+- API stats check: `http://127.0.0.1:3000/v1/stats`
+
+To stop:
+
+```bash
+docker compose down
+```
 
 ## Screenshots
 
@@ -196,6 +236,18 @@ When fetching next page, add `page` query argument to the URL. Pages are zero in
 ```
 $ curl -XGET "localhost:3000/v1/account/example/messages?path=INBOX&page=5"
 ```
+
+#### Move a message to another mailbox
+
+Use the message `id` from the message list response and update its `path`.
+
+```
+$ curl -XPUT "localhost:3000/v1/account/example/message/AAAAAQAAAeE" -H "content-type: application/json" -d '{
+    "path": "Labels/Unknown"
+}'
+```
+
+The response includes destination mailbox information and (when available) a new `messageId` for the moved message in that mailbox.
 
 #### Send an email
 

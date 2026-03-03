@@ -920,6 +920,10 @@ const init = async () => {
                 }),
 
                 payload: Joi.object({
+                    path: Joi.string()
+                        .max(1024)
+                        .description('Move message to selected mailbox path')
+                        .example('Labels/Unknown'),
                     flags: Joi.object({
                         add: Joi.array()
                             .items(Joi.string().max(128))
