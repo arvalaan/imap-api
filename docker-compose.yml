@@ -19,8 +19,8 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-    ports:
-      - "3000:3000"
+    network_mode: host
+    command: ["node", "server.js", "--dbs.redis=redis://127.0.0.1:6379/8", "--api.host=127.0.0.1", "--api.port=3000"]
     environment:
       - NODE_ENV=production
     restart: unless-stopped

@@ -94,7 +94,7 @@ git checkout work
 docker compose up --build
 ```
 
-Docker Compose waits for Redis health before starting IMAP API.
+Docker Compose waits for Redis health before starting IMAP API. The `imapapi` container uses `network_mode: host` so IMAP/SMTP connections to `127.0.0.1` (for example Proton Bridge on the host) work from inside the container. This is intended for Linux Docker hosts.
 
 Then open:
 
