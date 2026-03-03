@@ -135,3 +135,26 @@ curl -XPUT "localhost:3000/v1/account/pangalink/message/AAAAAQAAMlw" -H "content
     }
 }'
 ```
+
+```
+curl -XPUT "localhost:3000/v1/account/example/label" -H "content-type: application/json" -d '{
+    "label": "To-Process",
+    "prefix": "Labels",
+    "ensure": true
+}'
+```
+
+```
+curl -XPOST "localhost:3000/v1/account/example/message/AAAAAQAAMlw/labels/assign" -H "content-type: application/json" -d '{
+    "label": "To-Process",
+    "prefix": "Labels"
+}'
+```
+
+```
+curl -XPOST "localhost:3000/v1/account/example/messages/labels/assign" -H "content-type: application/json" -d '{
+    "messages": ["AAAAAQAAMlw", "AAAAAQAAAxk"],
+    "label": "To-Process",
+    "prefix": "Labels"
+}'
+```

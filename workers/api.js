@@ -203,6 +203,22 @@ const failAction = async (request, h, err) => {
     throw error;
 };
 
+const labelNameSchema = Joi.string()
+    .trim()
+    .max(256)
+    .pattern(/^[^\\/]+$/)
+    .required()
+    .example('To-Process')
+    .description('Label name. Path separators are not allowed.');
+
+const labelPrefixSchema = Joi.string()
+    .trim()
+    .max(256)
+    .default('Labels')
+    .example('Labels')
+    .description('Mailbox prefix used for label folders');
+
+
 let callQueue = new Map();
 let mids = 0;
 
@@ -1056,6 +1072,198 @@ const init = async () => {
                         .description('Destination mailbox path')
                         .example('Labels/Unknown')
                 }).label('MessageMoveBulk')
+            }
+        }
+    });
+
+
+    server.route({
+        method: 'POST',
+        path: '/v1/account/{account}/message/{message}/labels/assign',
+
+        async handler(request) {
+            let accountObject = new Account({ redis, account: request.params.account, call });
+
+            try {
+                let result = await accountObject.assignLabel(request.params.message, request.payload.label, {
+                    prefix: request.payload.prefix
+                });
+
+                if (!result || Array.isArray(result) || typeof result !== 'object') {
+                    return {
+                        id: request.params.message,
+                        assigned: false,
+                        label: request.payload.label,
+                        destination: `${request.payload.prefix || 'Labels'}/${request.payload.label}`,
+                        error: 'Unexpected backend response',
+                        raw: result
+                    };
+                }
+
+                return result;
+            } catch (err) {
+                if (Boom.isBoom(err)) {
+                    throw err;
+                }
+                throw Boom.boomify(err, { statusCode: err.statusCode || 500, decorate: { code: err.code } });
+            }
+        },
+        options: {
+            description: 'Assign label',
+            notes: 'Assign a label by moving a message to `${prefix}/${label}` (Proton Bridge-compatible)',
+            tags: ['api', 'message'],
+
+            validate: {
+                options: {
+                    stripUnknown: false,
+                    abortEarly: false,
+                    convert: true
+                },
+                failAction,
+
+                params: Joi.object({
+                    account: Joi.string()
+                        .max(256)
+                        .required()
+                        .example('example')
+                        .description('Account ID'),
+                    message: Joi.string()
+                        .max(256)
+                        .required()
+                        .example('AAAAAQAACnA')
+                        .description('Message ID')
+                }),
+
+                payload: Joi.object({
+                    label: labelNameSchema,
+                    prefix: labelPrefixSchema
+                }).label('AssignLabel')
+            }
+        }
+    });
+
+    server.route({
+        method: 'POST',
+        path: '/v1/account/{account}/messages/labels/assign',
+
+        async handler(request) {
+            let accountObject = new Account({ redis, account: request.params.account, call });
+
+            try {
+                let result = await accountObject.bulkAssignLabel(request.payload.messages, request.payload.label, {
+                    prefix: request.payload.prefix
+                });
+
+                if (!result || Array.isArray(result) || typeof result !== 'object') {
+                    return {
+                        assigned: 0,
+                        failed: request.payload.messages.length,
+                        destination: `${request.payload.prefix || 'Labels'}/${request.payload.label}`,
+                        label: request.payload.label,
+                        messages: request.payload.messages.map(id => ({
+                            id,
+                            assigned: false,
+                            error: 'Unexpected backend response'
+                        })),
+                        raw: result
+                    };
+                }
+
+                return result;
+            } catch (err) {
+                if (Boom.isBoom(err)) {
+                    throw err;
+                }
+                throw Boom.boomify(err, { statusCode: err.statusCode || 500, decorate: { code: err.code } });
+            }
+        },
+        options: {
+            description: 'Bulk assign label',
+            notes: 'Assign a label by moving messages to `${prefix}/${label}` in bulk',
+            tags: ['api', 'message'],
+
+            validate: {
+                options: {
+                    stripUnknown: false,
+                    abortEarly: false,
+                    convert: true
+                },
+                failAction,
+
+                params: Joi.object({
+                    account: Joi.string()
+                        .max(256)
+                        .required()
+                        .example('example')
+                        .description('Account ID')
+                }),
+
+                payload: Joi.object({
+                    messages: Joi.array()
+                        .items(
+                            Joi.string()
+                                .max(256)
+                                .required()
+                                .example('AAAAAQAACnA')
+                                .description('Message ID')
+                        )
+                        .min(1)
+                        .required()
+                        .description('List of message IDs to label'),
+                    label: labelNameSchema,
+                    prefix: labelPrefixSchema
+                }).label('AssignLabelBulk')
+            }
+        }
+    });
+
+    server.route({
+        method: 'PUT',
+        path: '/v1/account/{account}/label',
+
+        async handler(request) {
+            let accountObject = new Account({ redis, account: request.params.account, call });
+
+            try {
+                return await accountObject.ensureLabel(request.payload.label, {
+                    prefix: request.payload.prefix
+                });
+            } catch (err) {
+                if (Boom.isBoom(err)) {
+                    throw err;
+                }
+                throw Boom.boomify(err, { statusCode: err.statusCode || 500, decorate: { code: err.code } });
+            }
+        },
+        options: {
+            description: 'Ensure label mailbox',
+            notes: 'Creates `${prefix}/${label}` mailbox if missing and returns idempotent result',
+            tags: ['api', 'mailbox'],
+
+            validate: {
+                options: {
+                    stripUnknown: false,
+                    abortEarly: false,
+                    convert: true
+                },
+                failAction,
+
+                params: Joi.object({
+                    account: Joi.string()
+                        .max(256)
+                        .required()
+                        .example('example')
+                        .description('Account ID')
+                }),
+
+                payload: Joi.object({
+                    label: labelNameSchema,
+                    prefix: labelPrefixSchema,
+                    ensure: Joi.boolean()
+                        .truthy('Y', 'true', '1')
+                        .falsy('N', 'false', 0)
+                        .default(true)
+                }).label('EnsureLabel')
             }
         }
     });

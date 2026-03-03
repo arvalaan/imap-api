@@ -212,6 +212,57 @@ class ConnectionHandler {
         return await accountData.connection.bulkMoveMessages(message.messages, message.path);
     }
 
+    async assignLabel(message) {
+        if (!this.accounts.has(message.account)) {
+            return {
+                error: 'No active handler for requested account. Try again later.'
+            };
+        }
+
+        let accountData = this.accounts.get(message.account);
+        if (!accountData.connection) {
+            return {
+                error: 'No active handler for requested account. Try again later.'
+            };
+        }
+
+        return await accountData.connection.assignLabel(message.message, message.label, message.options);
+    }
+
+    async bulkAssignLabel(message) {
+        if (!this.accounts.has(message.account)) {
+            return {
+                error: 'No active handler for requested account. Try again later.'
+            };
+        }
+
+        let accountData = this.accounts.get(message.account);
+        if (!accountData.connection) {
+            return {
+                error: 'No active handler for requested account. Try again later.'
+            };
+        }
+
+        return await accountData.connection.bulkAssignLabel(message.messages, message.label, message.options);
+    }
+
+    async ensureLabel(message) {
+        if (!this.accounts.has(message.account)) {
+            return {
+                error: 'No active handler for requested account. Try again later.'
+            };
+        }
+
+        let accountData = this.accounts.get(message.account);
+        if (!accountData.connection) {
+            return {
+                error: 'No active handler for requested account. Try again later.'
+            };
+        }
+
+        return await accountData.connection.ensureLabel(message.label, message.options);
+    }
+
     async deleteMessage(message) {
         if (!this.accounts.has(message.account)) {
             return {
@@ -428,6 +479,15 @@ class ConnectionHandler {
 
             case 'bulkMoveMessages':
                 return await this.bulkMoveMessages(message);
+
+            case 'assignLabel':
+                return await this.assignLabel(message);
+
+            case 'bulkAssignLabel':
+                return await this.bulkAssignLabel(message);
+
+            case 'ensureLabel':
+                return await this.ensureLabel(message);
 
             case 'getRawMessage':
                 return await this.getRawMessage(message);

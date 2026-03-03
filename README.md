@@ -160,6 +160,14 @@ Example account payload:
 
 If you run with `docker-compose.hostnet.yml`, use `127.0.0.1` instead of `host.docker.internal`.
 
+### Proton labels via API
+
+For Proton Bridge-backed accounts, assigning a label is implemented as a mailbox move to `Labels/<LabelName>`.
+
+- Ensure label mailbox exists: `PUT /v1/account/{account}/label`
+- Assign label to one message: `POST /v1/account/{account}/message/{message}/labels/assign`
+- Assign label in bulk: `POST /v1/account/{account}/messages/labels/assign`
+
 ## Screenshots
 
 **1. General overview**
