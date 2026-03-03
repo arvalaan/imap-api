@@ -263,6 +263,40 @@ class ConnectionHandler {
         return await accountData.connection.ensureLabel(message.label, message.options);
     }
 
+    async removeLabel(message) {
+        if (!this.accounts.has(message.account)) {
+            return {
+                error: 'No active handler for requested account. Try again later.'
+            };
+        }
+
+        let accountData = this.accounts.get(message.account);
+        if (!accountData.connection) {
+            return {
+                error: 'No active handler for requested account. Try again later.'
+            };
+        }
+
+        return await accountData.connection.removeLabel(message.message, message.label, message.options);
+    }
+
+    async bulkRemoveLabel(message) {
+        if (!this.accounts.has(message.account)) {
+            return {
+                error: 'No active handler for requested account. Try again later.'
+            };
+        }
+
+        let accountData = this.accounts.get(message.account);
+        if (!accountData.connection) {
+            return {
+                error: 'No active handler for requested account. Try again later.'
+            };
+        }
+
+        return await accountData.connection.bulkRemoveLabel(message.messages, message.label, message.options);
+    }
+
     async deleteMessage(message) {
         if (!this.accounts.has(message.account)) {
             return {
@@ -488,6 +522,12 @@ class ConnectionHandler {
 
             case 'ensureLabel':
                 return await this.ensureLabel(message);
+
+            case 'removeLabel':
+                return await this.removeLabel(message);
+
+            case 'bulkRemoveLabel':
+                return await this.bulkRemoveLabel(message);
 
             case 'getRawMessage':
                 return await this.getRawMessage(message);

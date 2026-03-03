@@ -1224,6 +1224,116 @@ const init = async () => {
     });
 
     server.route({
+        method: 'POST',
+        path: '/v1/account/{account}/message/{message}/labels/remove',
+
+        async handler(request) {
+            let accountObject = new Account({ redis, account: request.params.account, call });
+
+            try {
+                return await accountObject.removeLabel(request.params.message, request.payload.label, {
+                    prefix: request.payload.prefix
+                });
+            } catch (err) {
+                if (Boom.isBoom(err)) {
+                    throw err;
+                }
+                throw Boom.boomify(err, { statusCode: err.statusCode || 500, decorate: { code: err.code } });
+            }
+        },
+        options: {
+            description: 'Remove label',
+            notes: 'Remove label by deleting the message entry from `${prefix}/${label}` (Proton Bridge-compatible)',
+            tags: ['api', 'message'],
+
+            validate: {
+                options: {
+                    stripUnknown: false,
+                    abortEarly: false,
+                    convert: true
+                },
+                failAction,
+
+                params: Joi.object({
+                    account: Joi.string()
+                        .max(256)
+                        .required()
+                        .example('example')
+                        .description('Account ID'),
+                    message: Joi.string()
+                        .max(256)
+                        .required()
+                        .example('AAAAAQAACnA')
+                        .description('Message ID')
+                }),
+
+                payload: Joi.object({
+                    label: labelNameSchema,
+                    prefix: labelPrefixSchema
+                }).label('RemoveLabel')
+            }
+        }
+    });
+
+    server.route({
+        method: 'POST',
+        path: '/v1/account/{account}/messages/labels/remove',
+
+        async handler(request) {
+            let accountObject = new Account({ redis, account: request.params.account, call });
+
+            try {
+                return await accountObject.bulkRemoveLabel(request.payload.messages, request.payload.label, {
+                    prefix: request.payload.prefix
+                });
+            } catch (err) {
+                if (Boom.isBoom(err)) {
+                    throw err;
+                }
+                throw Boom.boomify(err, { statusCode: err.statusCode || 500, decorate: { code: err.code } });
+            }
+        },
+        options: {
+            description: 'Bulk remove label',
+            notes: 'Remove label from messages by deleting entries from `${prefix}/${label}` in bulk',
+            tags: ['api', 'message'],
+
+            validate: {
+                options: {
+                    stripUnknown: false,
+                    abortEarly: false,
+                    convert: true
+                },
+                failAction,
+
+                params: Joi.object({
+                    account: Joi.string()
+                        .max(256)
+                        .required()
+                        .example('example')
+                        .description('Account ID')
+                }),
+
+                payload: Joi.object({
+                    messages: Joi.array()
+                        .items(
+                            Joi.string()
+                                .max(256)
+                                .required()
+                                .example('AAAAAQAACnA')
+                                .description('Message ID')
+                        )
+                        .min(1)
+                        .required()
+                        .description('List of message IDs to unlabel'),
+                    label: labelNameSchema,
+                    prefix: labelPrefixSchema
+                }).label('RemoveLabelBulk')
+            }
+        }
+    });
+
+    server.route({
         method: 'PUT',
         path: '/v1/account/{account}/label',
 

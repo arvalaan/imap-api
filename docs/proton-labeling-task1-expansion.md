@@ -112,6 +112,41 @@ Response shape:
 }
 ```
 
+### 4) Label removal / unassignment
+
+`POST /v1/account/{account}/message/{message}/labels/remove`
+
+Payload:
+
+```json
+{
+  "label": "To-Progress",
+  "prefix": "Labels"
+}
+```
+
+Rules:
+
+- resolves target label mailbox path `${prefix}/${label}`
+- removes the label by deleting the message entry from that label mailbox
+- when input message id comes from another mailbox (for example `INBOX`), lookup is done by `emailId`
+
+Response shape:
+
+```json
+{
+  "id": "AAAA...",
+  "removed": true,
+  "label": "To-Progress",
+  "destination": "Labels/To-Progress",
+  "matches": 1
+}
+```
+
+Bulk endpoint:
+
+- `POST /v1/account/{account}/messages/labels/remove`
+
 ## Validation and normalization requirements
 
 - reject empty label names
