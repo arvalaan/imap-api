@@ -1085,6 +1085,22 @@ const init = async () => {
             let accountObject = new Account({ redis, account: request.params.account, call });
 
             try {
+                let result = await accountObject.assignLabel(request.params.message, request.payload.label, {
+                    prefix: request.payload.prefix
+                });
+
+                if (!result || Array.isArray(result) || typeof result !== 'object') {
+                    return {
+                        id: request.params.message,
+                        assigned: false,
+                        label: request.payload.label,
+                        destination: `${request.payload.prefix || 'Labels'}/${request.payload.label}`,
+                        error: 'Unexpected backend response',
+                        raw: result
+                    };
+                }
+
+                return result;
                 return await accountObject.assignLabel(request.params.message, request.payload.label, {
                     prefix: request.payload.prefix
                 });
@@ -1137,6 +1153,26 @@ const init = async () => {
             let accountObject = new Account({ redis, account: request.params.account, call });
 
             try {
+                let result = await accountObject.bulkAssignLabel(request.payload.messages, request.payload.label, {
+                    prefix: request.payload.prefix
+                });
+
+                if (!result || Array.isArray(result) || typeof result !== 'object') {
+                    return {
+                        assigned: 0,
+                        failed: request.payload.messages.length,
+                        destination: `${request.payload.prefix || 'Labels'}/${request.payload.label}`,
+                        label: request.payload.label,
+                        messages: request.payload.messages.map(id => ({
+                            id,
+                            assigned: false,
+                            error: 'Unexpected backend response'
+                        })),
+                        raw: result
+                    };
+                }
+
+                return result;
                 return await accountObject.bulkAssignLabel(request.payload.messages, request.payload.label, {
                     prefix: request.payload.prefix
                 });
