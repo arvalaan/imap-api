@@ -301,6 +301,8 @@ async function onCommand(worker, message) {
         case 'assignLabel':
         case 'bulkAssignLabel':
         case 'ensureLabel':
+        case 'removeLabel':
+        case 'bulkRemoveLabel':
         case 'createMailbox':
         case 'deleteMailbox':
         case 'submitMessage':
