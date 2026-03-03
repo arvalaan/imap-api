@@ -1101,6 +1101,9 @@ const init = async () => {
                 }
 
                 return result;
+                return await accountObject.assignLabel(request.params.message, request.payload.label, {
+                    prefix: request.payload.prefix
+                });
             } catch (err) {
                 if (Boom.isBoom(err)) {
                     throw err;
@@ -1170,6 +1173,9 @@ const init = async () => {
                 }
 
                 return result;
+                return await accountObject.bulkAssignLabel(request.payload.messages, request.payload.label, {
+                    prefix: request.payload.prefix
+                });
             } catch (err) {
                 if (Boom.isBoom(err)) {
                     throw err;
