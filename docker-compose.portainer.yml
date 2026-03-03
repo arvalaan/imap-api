@@ -1,0 +1,56 @@
+version: "3.8"
+
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - imapapi_redis_data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  imapapi:
+    image: node:20-alpine
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+
+    ports:
+      - "${IMAPAPI_PUBLISHED_PORT:-3000}:3000"
+
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      NODE_CONFIG_PATH: ${NODE_CONFIG_PATH:-/config/imapapi.toml}
+      IMAPAPI_REPO: ${IMAPAPI_REPO:-https://github.com/ewildgoose/imap-api.git}
+      IMAPAPI_BRANCH: ${IMAPAPI_BRANCH:-main}
+
+    volumes:
+      - imapapi_app:/app
+      - "${HOST_IMAPAPI_CONFIG:-/opt/imapapi/imapapi.toml}:${NODE_CONFIG_PATH:-/config/imapapi.toml}:ro"
+
+    command: >
+      sh -lc "
+        apk add --no-cache git &&
+        if [ ! -d /app/.git ]; then
+          git clone --depth 1 --branch \"$IMAPAPI_BRANCH\" \"$IMAPAPI_REPO\" /app;
+        fi &&
+        cd /app &&
+        (npm ci --omit=dev || npm install --production) &&
+        node server.js --dbs.redis=redis://redis:6379/8 --api.host=0.0.0.0 --api.port=3000
+      "
+
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/v1/stats').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+volumes:
+  imapapi_redis_data:
+  imapapi_app:

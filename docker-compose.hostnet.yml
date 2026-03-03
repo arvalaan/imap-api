@@ -1,0 +1,6 @@
+services:
+  imapapi:
+    network_mode: host
+    ports: []
+    extra_hosts: []
+    command: ["node", "server.js", "--dbs.redis=redis://127.0.0.1:6379/8", "--api.host=127.0.0.1", "--api.port=3000"]

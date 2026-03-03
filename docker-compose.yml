@@ -1,0 +1,29 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: imapapi-redis
+    command: ["redis-server", "--appendonly", "no", "--save", ""]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  imapapi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: imapapi-app
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: ["node", "server.js", "--dbs.redis=redis://redis:6379/8", "--api.host=0.0.0.0", "--api.port=3000"]
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped

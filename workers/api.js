@@ -3,7 +3,7 @@
 const { parentPort } = require('worker_threads');
 const Hapi = require('@hapi/hapi');
 const Boom = require('@hapi/boom');
-const Joi = require('@hapi/joi');
+const Joi = require('joi');
 const logger = require('../lib/logger');
 const hapiPino = require('hapi-pino');
 const { ImapFlow } = require('imapflow');
@@ -920,6 +920,10 @@ const init = async () => {
                 }),
 
                 payload: Joi.object({
+                    path: Joi.string()
+                        .max(1024)
+                        .description('Move message to selected mailbox path')
+                        .example('Labels/Unknown'),
                     flags: Joi.object({
                         add: Joi.array()
                             .items(Joi.string().max(128))
@@ -943,6 +947,60 @@ const init = async () => {
             }
         }
     });
+
+    server.route({
+        method: 'POST',
+        path: '/v1/account/{account}/message/{message}/move',
+
+        async handler(request) {
+            let accountObject = new Account({ redis, account: request.params.account, call });
+
+            try {
+                return await accountObject.updateMessage(request.params.message, { path: request.payload.path });
+            } catch (err) {
+                if (Boom.isBoom(err)) {
+                    throw err;
+                }
+                throw Boom.boomify(err, { statusCode: err.statusCode || 500, decorate: { code: err.code } });
+            }
+        },
+        options: {
+            description: 'Move message',
+            notes: 'Move message from current mailbox to destination mailbox path',
+            tags: ['api', 'message'],
+
+            validate: {
+                options: {
+                    stripUnknown: false,
+                    abortEarly: false,
+                    convert: true
+                },
+                failAction,
+
+                params: Joi.object({
+                    account: Joi.string()
+                        .max(256)
+                        .required()
+                        .example('example')
+                        .description('Account ID'),
+                    message: Joi.string()
+                        .max(256)
+                        .required()
+                        .example('AAAAAQAACnA')
+                        .description('Message ID')
+                }),
+
+                payload: Joi.object({
+                    path: Joi.string()
+                        .max(1024)
+                        .required()
+                        .description('Destination mailbox path')
+                        .example('Labels/Unknown')
+                }).label('MessageMove')
+            }
+        }
+    });
+
 
     server.route({
         method: 'DELETE',
