@@ -195,6 +195,23 @@ class ConnectionHandler {
         return await accountData.connection.updateMessage(message.message, message.updates);
     }
 
+    async bulkMoveMessages(message) {
+        if (!this.accounts.has(message.account)) {
+            return {
+                error: 'No active handler for requested account. Try again later.'
+            };
+        }
+
+        let accountData = this.accounts.get(message.account);
+        if (!accountData.connection) {
+            return {
+                error: 'No active handler for requested account. Try again later.'
+            };
+        }
+
+        return await accountData.connection.bulkMoveMessages(message.messages, message.path);
+    }
+
     async deleteMessage(message) {
         if (!this.accounts.has(message.account)) {
             return {
@@ -408,6 +425,9 @@ class ConnectionHandler {
 
             case 'deleteMessage':
                 return await this.deleteMessage(message);
+
+            case 'bulkMoveMessages':
+                return await this.bulkMoveMessages(message);
 
             case 'getRawMessage':
                 return await this.getRawMessage(message);
