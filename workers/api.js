@@ -1001,6 +1001,65 @@ const init = async () => {
         }
     });
 
+    server.route({
+        method: 'POST',
+        path: '/v1/account/{account}/messages/move',
+
+        async handler(request) {
+            let accountObject = new Account({ redis, account: request.params.account, call });
+
+            try {
+                return await accountObject.bulkMoveMessages(request.payload.messages, request.payload.path);
+            } catch (err) {
+                if (Boom.isBoom(err)) {
+                    throw err;
+                }
+                throw Boom.boomify(err, { statusCode: err.statusCode || 500, decorate: { code: err.code } });
+            }
+        },
+        options: {
+            description: 'Bulk move messages',
+            notes: 'Move multiple messages from current mailbox to destination mailbox path',
+            tags: ['api', 'message'],
+
+            validate: {
+                options: {
+                    stripUnknown: false,
+                    abortEarly: false,
+                    convert: true
+                },
+                failAction,
+
+                params: Joi.object({
+                    account: Joi.string()
+                        .max(256)
+                        .required()
+                        .example('example')
+                        .description('Account ID')
+                }),
+
+                payload: Joi.object({
+                    messages: Joi.array()
+                        .items(
+                            Joi.string()
+                                .max(256)
+                                .required()
+                                .example('AAAAAQAACnA')
+                                .description('Message ID')
+                        )
+                        .min(1)
+                        .required()
+                        .description('List of message IDs to move'),
+                    path: Joi.string()
+                        .max(1024)
+                        .required()
+                        .description('Destination mailbox path')
+                        .example('Labels/Unknown')
+                }).label('MessageMoveBulk')
+            }
+        }
+    });
+
 
     server.route({
         method: 'DELETE',
