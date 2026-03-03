@@ -30,7 +30,7 @@ export REDIS_PORT
 npm install --no-audit --no-fund
 npm test
 
-node server.js --db.redis="redis://127.0.0.1:${REDIS_PORT}/8" --api.port=3100 --api.host=127.0.0.1 > /tmp/imapapi-start.log 2>&1 &
+node server.js --dbs.redis="redis://127.0.0.1:${REDIS_PORT}/8" --api.port=3100 --api.host=127.0.0.1 > /tmp/imapapi-start.log 2>&1 &
 SERVER_PID=$!
 
 for i in {1..40}; do

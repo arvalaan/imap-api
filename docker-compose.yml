@@ -5,6 +5,11 @@ services:
     command: ["redis-server", "--appendonly", "no", "--save", ""]
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
 
   imapapi:
     build:
@@ -12,7 +17,8 @@ services:
       dockerfile: Dockerfile
     container_name: imapapi-app
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     ports:
       - "3000:3000"
     environment:

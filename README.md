@@ -60,7 +60,7 @@ $ node server.js
 Or use custom Redis connection URL
 
 ```
-$ node server.js --dbs.redis="redis://127.0.0.1:6379"
+$ node server.js --dbs.redis="redis://127.0.0.1:6379/8"
 ```
 
 Once application is started open http://127.0.0.1:3000/ for instructions and API documentation.
@@ -93,6 +93,8 @@ git checkout work
 
 docker compose up --build
 ```
+
+Docker Compose waits for Redis health before starting IMAP API.
 
 Then open:
 
